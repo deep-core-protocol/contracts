@@ -1,0 +1,18 @@
+{
+    "_comment": "DeepCore Protocol — Cronos (25). MAINNET topology.",
+    "_profile": "default — chain supports EIP-1153, probed live (eip1153.json). Build with `forge build`.",
+    "_chainId": 25,
+    "_supportsEip1153": true,
+    "_create3Note": "Deploy our OWN factory first (00_DeployCreate3Factory). PancakeSwap's is onlyWhitelisted and owned by an address we do not control.",
+    "create3Factory": "0x",
+    "_ownerNote": "MAINNET — never an EOA. One timelock tier (Custody 48h, packages/governance/script/DeployGovernanceMainnet.s.sol, the Safe as sole proposer, address(0) as executor, a dedicated canceller); there is no Policy tier. protocolFeeControllerOwner = the DeepCore governance Safe (not created yet). poolOwner = what the Vault and both pool-manager owner wrappers are NOMINATED to (Ownable2Step): the Safe, which then queues the handover to the custody timelock. The Safe must exist on this chain (code present) first. Left as \"0x\" on purpose so a deploy fails loudly rather than succeeding with the wrong owner.",
+    "poolOwner": "0x",
+    "protocolFeeControllerOwner": "0x",
+    "vault": "0x",
+    "clPoolManager": "0x",
+    "binPoolManager": "0x",
+    "clProtocolFeeController": "0x",
+    "binProtocolFeeController": "0x",
+    "clPoolManagerOwnerContract": "0x",
+    "binPoolManagerOwnerContract": "0x"
+}

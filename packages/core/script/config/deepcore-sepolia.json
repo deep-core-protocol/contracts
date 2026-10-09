@@ -1,0 +1,18 @@
+{
+    "_comment": "DeepCore Protocol — Sepolia (11155111). TESTNET topology.",
+    "_profile": "default — chain supports EIP-1153, probed live (eip1153.json). Build with `forge build`.",
+    "_chainId": 11155111,
+    "_supportsEip1153": true,
+    "_create3Note": "Deploy our OWN factory first (00_DeployCreate3Factory). PancakeSwap's is onlyWhitelisted and owned by an address we do not control.",
+    "create3Factory": "0x",
+    "_ownerNote": "TESTNET. poolOwner and protocolFeeControllerOwner are still a Safe contract (a test Safe is enough); left as \"0x\" so a deploy fails loudly rather than succeeding with the wrong owner.",
+    "poolOwner": "0x",
+    "protocolFeeControllerOwner": "0x",
+    "vault": "0x",
+    "clPoolManager": "0x",
+    "binPoolManager": "0x",
+    "clProtocolFeeController": "0x",
+    "binProtocolFeeController": "0x",
+    "clPoolManagerOwnerContract": "0x",
+    "binPoolManagerOwnerContract": "0x"
+}
