@@ -1,0 +1,19 @@
+{
+  "approve_erc20_to_permit2": "46146",
+  "approve_erc20_to_testRouter": "46206",
+  "approve_permit2_to_router": "47806",
+  "bin_hookless_universalRouter": "133525",
+  "guard_decay_clPoolManagerRouter": "171348",
+  "guard_decay_universalRouter": "186081",
+  "guard_settled_clPoolManagerRouter": "171232",
+  "guard_settled_tax_clPoolManagerRouter": "178919",
+  "guard_settled_tax_universalRouter": "193652",
+  "guard_settled_universalRouter": "185965",
+  "hookless_clPoolManagerRouter": "129663",
+  "hookless_universalRouter": "144396",
+  "hookless_v4peripheryRecipe_firstSwap_universalRouter": "166605",
+  "hookless_v4peripheryRecipe_secondSwap_universalRouter": "144125",
+  "hookless_v4peripheryRecipe_thirdSwap_clPoolManagerRouter": "129356",
+  "revshare_clPoolManagerRouter": "186940",
+  "revshare_universalRouter": "201673"
+}

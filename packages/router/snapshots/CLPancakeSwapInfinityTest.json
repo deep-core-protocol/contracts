@@ -1,0 +1,9 @@
+{
+  "test_infiClSwap_ExactInSingle": "270908",
+  "test_infiClSwap_ExactIn_MultiHop": "343060",
+  "test_infiClSwap_ExactIn_SingleHop": "272497",
+  "test_infiClSwap_ExactOutSingle": "270727",
+  "test_infiClSwap_ExactOut_MultiHop": "342638",
+  "test_infiClSwap_ExactOut_SingleHop": "272322",
+  "test_infiClSwap_infiInitializeClPool": "155738"
+}

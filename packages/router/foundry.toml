@@ -1,0 +1,82 @@
+[profile.default]
+allow_paths = ["../core", "../periphery"]
+skip = [
+    # Default (cancun) build: exclude only the storage backend it does not use.
+    # Do NOT skip sibling test dirs here - router tests may import their helpers.
+    "**/transient/storage/**",
+]
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    "ds-test/=lib/forge-std/lib/ds-test/src/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "openzeppelin-contracts/=../core/lib/openzeppelin-contracts/",
+    "solmate/=../core/lib/solmate/",
+    "infinity-periphery/=../periphery/",
+    "infinity-core/=../core/",
+    "permit2/=../periphery/lib/permit2/",
+    "pancake-create3-factory/=lib/pancake-create3-factory/",
+    "hp-transient/=../core/src/libraries/transient/eip1153/",
+]
+src = "src"
+out = 'foundry-out'
+libs = ["lib"]
+via_ir = true
+optimizer_runs = 20_000
+ffi = true
+fs_permissions = [
+    { access = "read-write", path = ".forge-snapshots/" },
+    { access = "read", path = "./test/bin/" },
+]
+solc_version = '0.8.26'
+evm_version = "cancun"
+bytecode_hash = "none"
+
+# ref: https://github.com/foundry-rs/foundry/issues/4060 otherwise verification will have an issue
+auto_detect_remappings = false
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DeepCoreProtocol: pre-Cancun build. Mirrors packages/core --profile legacy.
+# The hp-transient backend is pinned per-profile HERE and never in remappings.txt,
+# which would silently override it and build the wrong backend.
+# ─────────────────────────────────────────────────────────────────────────────
+[profile.legacy]
+allow_paths = ["../core", "../periphery"]
+src = "src"
+out = "foundry-out-legacy"
+libs = ["lib"]
+solc_version = "0.8.26"
+optimizer_runs = 20_000
+via_ir = true
+ffi = true
+evm_version = "shanghai"
+bytecode_hash = "none"
+auto_detect_remappings = false
+skip = [
+    "**/transient/eip1153/**",
+    # OpenZeppelin files using EIP-1153. None are reachable from this package's own imports
+    # (Ownable / IERC20 / IERC721 / SafeCast / Strings); forge compiles them only because it
+    # walks the whole ../core tree as sources. Skipping the transient users and everything
+    # importing StorageSlot keeps the shanghai build clean without touching lib/ submodules.
+    "**/openzeppelin-contracts/contracts/mocks/**",
+    "**/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+    "**/openzeppelin-contracts/contracts/utils/ShortStrings.sol",
+    "**/openzeppelin-contracts/contracts/utils/Arrays.sol",
+    "**/openzeppelin-contracts/contracts/utils/SlotDerivation.sol",
+    "**/openzeppelin-contracts/contracts/utils/ReentrancyGuardTransient.sol",
+    "**/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Utils.sol",
+    "**/openzeppelin-contracts/contracts/token/ERC20/extensions/draft-ERC20TemporaryApproval.sol",
+]
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    "ds-test/=lib/forge-std/lib/ds-test/src/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "openzeppelin-contracts/=../core/lib/openzeppelin-contracts/",
+    "solmate/=../core/lib/solmate/",
+    "infinity-periphery/=../periphery/",
+    "infinity-core/=../core/",
+    "permit2/=../periphery/lib/permit2/",
+    "pancake-create3-factory/=lib/pancake-create3-factory/",
+    "hp-transient/=../core/src/libraries/transient/storage/",
+]

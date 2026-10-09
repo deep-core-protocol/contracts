@@ -1,0 +1,142 @@
+# DeepCoreProtocol launchpad integration kit.
+#
+# Copied from packages/periphery, because this package compiles periphery's
+# CLPositionManager as a dependency and therefore inherits its build constraints
+# (notably the 9 000-run compilation restriction that keeps CLPositionManager
+# inside the 24 KB code-size limit).
+#
+# `hp-transient/` is pinned PER PROFILE here and deliberately NOT in a
+# remappings.txt - this package ships no remappings.txt at all, so there is
+# nothing that can silently override the profile and build the wrong backend.
+
+[profile.default]
+src = "src"
+out = "foundry-out"
+solc_version = "0.8.26"
+optimizer_runs = 1_000_000
+via_ir = true
+evm_version = "cancun"
+bytecode_hash = "none"
+allow_paths = ["../core", "../hooks", "../registry", "../periphery", "../fees", "../router", "../hooks-revshare"]
+allow_internal_expect_revert = true
+gas_limit = "3000000000"
+skip = [
+    # Default (cancun) build: exclude only the storage backend it does not use.
+    "**/transient/storage/**",
+]
+remappings = [
+    "infinity-core/=../core/",
+    "infinity-periphery/=../periphery/",
+    "deepcore-hooks/=../hooks/",
+    "deepcore-registry/=../registry/",
+    "deepcore-fees/=../fees/",
+    # test/gas/SwapGasBenchmark.t.sol: the real UniversalRouter and RevShareHook, read-only.
+    "deepcore-router/=../router/",
+    "deepcore-hooks-revshare/=../hooks-revshare/",
+    "permit2/=../periphery/lib/permit2",
+    "forge-std/=../core/lib/forge-std/src/",
+    "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
+    "openzeppelin-contracts/=../core/lib/openzeppelin-contracts/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "solmate/=../core/lib/solmate/",
+    "hp-transient/=../core/src/libraries/transient/eip1153/",
+]
+
+additional_compiler_profiles = [
+  { name = "clPosm", optimizer_runs = 9000 }
+]
+
+compilation_restrictions = [
+  { paths = "../periphery/src/pool-cl/CLPositionManager.sol", optimizer_runs = 9000 },
+  # LaunchpadKitV2 and its linked library exceed EIP-170 at 1_000_000 runs. They share the clPosm
+  # profile so a test that deploys both the kit and CLPositionManager resolves to one profile.
+  { paths = "src/LaunchpadKitV2.sol", optimizer_runs = 9000 },
+  { paths = "src/libraries/LaunchLegs.sol", optimizer_runs = 9000 },
+  # The launch guards, since they take the fee themselves (2026-09-28): 24,168 and 24,173 bytes at
+  # 1_000_000 runs, against 20,071 and 20,111 at 9_000. Pinned for the size, and so that a guard is
+  # ONE bytecode whichever script deploys it: before this a kit-importing unit produced other code
+  # for the same source, and CreateX would have put it at the same address.
+  #
+  # BOTH PATH FORMS, and the second is not decoration. `BinLaunchGuardHook.sol` imports
+  # `./LaunchGuardHook.sol`, and forge records a file reached by a relative import from outside
+  # this root under its ABSOLUTE path. So one build holds the CL guard twice, as `../hooks/...`
+  # (reached through the `deepcore-hooks/` remapping) and as `<drive>:/.../hooks/...`. A restriction
+  # on the first form alone leaves the second at 1_000_000 runs, and both write
+  # `LaunchGuardHook.json`: the artifact on disk is then whichever was written last.
+  { paths = "../hooks/src/launch/LaunchGuardHook.sol", optimizer_runs = 9000 },
+  { paths = "../hooks/src/launch/BinLaunchGuardHook.sol", optimizer_runs = 9000 },
+  { paths = "../hooks/src/launch/LaunchTaxModule.sol", optimizer_runs = 9000 },
+  { paths = "**/hooks/src/launch/*.sol", optimizer_runs = 9000 }
+]
+
+# Pre-Cancun build. Mirrors packages/core --profile legacy.
+[profile.legacy]
+src = "src"
+out = "foundry-out-legacy"
+solc_version = "0.8.26"
+optimizer_runs = 1_000_000
+via_ir = true
+evm_version = "shanghai"
+bytecode_hash = "none"
+allow_paths = ["../core", "../hooks", "../registry", "../periphery", "../fees", "../router", "../hooks-revshare"]
+allow_internal_expect_revert = true
+gas_limit = "3000000000"
+skip = [
+    "**/transient/eip1153/**",
+    # OpenZeppelin files using EIP-1153. Mirrors packages/periphery --profile legacy.
+    "**/openzeppelin-contracts/contracts/mocks/**",
+    "**/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+    "**/openzeppelin-contracts/contracts/utils/ShortStrings.sol",
+    "**/openzeppelin-contracts/contracts/utils/Arrays.sol",
+    "**/openzeppelin-contracts/contracts/utils/SlotDerivation.sol",
+    "**/openzeppelin-contracts/contracts/utils/ReentrancyGuardTransient.sol",
+    "**/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Utils.sol",
+    "**/openzeppelin-contracts/contracts/token/ERC20/extensions/draft-ERC20TemporaryApproval.sol",
+]
+remappings = [
+    "infinity-core/=../core/",
+    "infinity-periphery/=../periphery/",
+    "deepcore-hooks/=../hooks/",
+    "deepcore-registry/=../registry/",
+    "deepcore-fees/=../fees/",
+    # test/gas/SwapGasBenchmark.t.sol: the real UniversalRouter and RevShareHook, read-only.
+    "deepcore-router/=../router/",
+    "deepcore-hooks-revshare/=../hooks-revshare/",
+    "permit2/=../periphery/lib/permit2",
+    "forge-std/=../core/lib/forge-std/src/",
+    "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
+    "openzeppelin-contracts/=../core/lib/openzeppelin-contracts/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "solmate/=../core/lib/solmate/",
+    "hp-transient/=../core/src/libraries/transient/storage/",
+]
+
+additional_compiler_profiles = [
+  { name = "clPosm", optimizer_runs = 9000 }
+]
+
+compilation_restrictions = [
+  { paths = "../periphery/src/pool-cl/CLPositionManager.sol", optimizer_runs = 9000 },
+  # LaunchpadKitV2 and its linked library exceed EIP-170 at 1_000_000 runs. They share the clPosm
+  # profile so a test that deploys both the kit and CLPositionManager resolves to one profile.
+  { paths = "src/LaunchpadKitV2.sol", optimizer_runs = 9000 },
+  { paths = "src/libraries/LaunchLegs.sol", optimizer_runs = 9000 },
+  # The launch guards, since they take the fee themselves (2026-09-28): 24,168 and 24,173 bytes at
+  # 1_000_000 runs, against 20,071 and 20,111 at 9_000. Pinned for the size, and so that a guard is
+  # ONE bytecode whichever script deploys it: before this a kit-importing unit produced other code
+  # for the same source, and CreateX would have put it at the same address.
+  #
+  # BOTH PATH FORMS, and the second is not decoration. `BinLaunchGuardHook.sol` imports
+  # `./LaunchGuardHook.sol`, and forge records a file reached by a relative import from outside
+  # this root under its ABSOLUTE path. So one build holds the CL guard twice, as `../hooks/...`
+  # (reached through the `deepcore-hooks/` remapping) and as `<drive>:/.../hooks/...`. A restriction
+  # on the first form alone leaves the second at 1_000_000 runs, and both write
+  # `LaunchGuardHook.json`: the artifact on disk is then whichever was written last.
+  { paths = "../hooks/src/launch/LaunchGuardHook.sol", optimizer_runs = 9000 },
+  { paths = "../hooks/src/launch/BinLaunchGuardHook.sol", optimizer_runs = 9000 },
+  { paths = "../hooks/src/launch/LaunchTaxModule.sol", optimizer_runs = 9000 },
+  { paths = "**/hooks/src/launch/*.sol", optimizer_runs = 9000 }
+]
+
+[fuzz]
+runs = 256

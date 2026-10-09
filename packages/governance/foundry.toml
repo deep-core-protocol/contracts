@@ -1,0 +1,44 @@
+[profile.default]
+src = "src"
+out = "foundry-out"
+solc_version = "0.8.26"
+optimizer_runs = 25_666
+via_ir = true
+evm_version = "cancun"
+bytecode_hash = "none"
+allow_paths = ["../core", "../fees"]
+allow_internal_expect_revert = true
+remappings = [
+    "infinity-core/=../core/",
+    "forge-std/=../core/lib/forge-std/src/",
+    "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "deepcore-fees/=../fees/",
+    "hp-transient/=../core/src/libraries/transient/eip1153/",
+]
+
+# Pre-Cancun build. Mirrors packages/core --profile legacy.
+#
+# This package writes no transient storage of its own, but it remaps
+# `hp-transient/` and links against infinity-core, which does. Without this
+# profile the governance suite only ever exercised the EIP-1153 Vault, so a
+# pre-Cancun regression here would have been invisible until deployment.
+# CLAUDE.md: every package carries the same two profiles.
+[profile.legacy]
+src = "src"
+out = "foundry-out-legacy"
+solc_version = "0.8.26"
+optimizer_runs = 25_666
+via_ir = true
+evm_version = "shanghai"
+bytecode_hash = "none"
+allow_paths = ["../core", "../fees"]
+allow_internal_expect_revert = true
+remappings = [
+    "infinity-core/=../core/",
+    "forge-std/=../core/lib/forge-std/src/",
+    "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "deepcore-fees/=../fees/",
+    "hp-transient/=../core/src/libraries/transient/storage/",
+]

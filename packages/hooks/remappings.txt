@@ -1,0 +1,5 @@
+infinity-core/=../core/
+forge-std/=../core/lib/forge-std/src/
+ds-test/=../core/lib/forge-std/lib/ds-test/src/
+@openzeppelin/=../core/lib/openzeppelin-contracts/
+solmate/=../core/lib/solmate/

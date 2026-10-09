@@ -1,0 +1,100 @@
+[profile.default]
+skip = ["src/libraries/transient/storage/**"]
+# HookProtocol: EIP-1153 backend. Pinned here (NOT in remappings.txt) because
+# remappings.txt silently overrides per-profile remappings, which would build
+# the wrong backend for --profile legacy.
+remappings = [
+    "ds-test/=lib/forge-std/lib/ds-test/src/",
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "solmate/=lib/solmate/",
+    "pancake-create3-factory/=lib/pancake-create3-factory/",
+    "hp-transient/=src/libraries/transient/eip1153/",
+]
+src = 'src'
+out = 'foundry-out'
+solc_version = '0.8.26'
+optimizer_runs = 25_666
+via_ir = true
+ffi = true
+fs_permissions = [
+    { access = "read-write", path = ".forge-snapshots/" },
+    { access = "read", path = "./foundry-out" },
+    { access = "read", path = "./script/config" },
+    { access = "read", path = "./test/pool-cl/bin" },
+    { access = "read", path = "./test/pool-bin/bin" },
+]
+evm_version = 'cancun'
+gas_limit = "300000000"
+bytecode_hash = "none"
+
+# added due to v1.0 foundry
+# ref: https://book.getfoundry.sh/guides/v1.0-migration#expect-revert-cheatcode-disabled-on-internal-calls-by-default
+allow_internal_expect_revert = true
+
+[fuzz]
+runs = 5 # change this for higher number of fuzz runs locally
+
+[profile.ci.fuzz]
+runs = 10000
+
+[profile.ci.invariant]
+runs = 1000            # The number of calls to make in the invariant tests
+call_override = false  # Override calls
+fail_on_revert = false # Fail the test if the contract reverts
+
+[profile.ci_main.fuzz]
+runs = 100000
+
+[profile.ci_main.invariant]
+runs = 10000           # The number of calls to make in the invariant tests
+call_override = false  # Override calls
+fail_on_revert = false # Fail the test if the contract reverts
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HookProtocol: legacy profile for chains WITHOUT EIP-1153 (pre-Cancun).
+# Swaps the transient-storage backend for the SSTORE-based one and drops the
+# EVM target to shanghai. Build with:  forge build --profile legacy
+# Deploy scripts MUST assert TransientSlot.IS_EIP1153 matches the target chain.
+# ─────────────────────────────────────────────────────────────────────────────
+[profile.legacy]
+skip = ["src/libraries/transient/eip1153/**"]
+src = 'src'
+out = 'foundry-out-legacy'
+solc_version = '0.8.26'
+optimizer_runs = 25_666
+via_ir = true
+ffi = true
+evm_version = 'shanghai'
+gas_limit = "300000000"
+bytecode_hash = "none"
+allow_internal_expect_revert = true
+remappings = [
+    "ds-test/=lib/forge-std/lib/ds-test/src/",
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "solmate/=lib/solmate/",
+    "pancake-create3-factory/=lib/pancake-create3-factory/",
+    "hp-transient/=src/libraries/transient/storage/",
+]
+
+[profile.legacy.fuzz]
+runs = 5
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DeepCore Protocol: networks and verification.
+# Values come from the environment (packages/core/.env, gitignored). Never inline
+# a key or a credentialed RPC URL here — this file is committed.
+# ─────────────────────────────────────────────────────────────────────────────
+[rpc_endpoints]
+sepolia = "${SEPOLIA_RPC_URL}"
+hyperevm = "${HYPEREVM_RPC_URL}"
+plasma = "${PLASMA_RPC_URL}"
+stable = "${STABLE_RPC_URL}"
+arc_testnet = "${ARC_TESTNET_RPC_URL}"
+
+[etherscan]
+# Etherscan covers Ethereum and Sepolia. HyperEVM, Plasma, Stable and Arc run
+# their own explorers (plasmascan.to, arcscan, …) and need per-explorer
+# verification config — an Etherscan key does not verify contracts there.
+sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 11155111 }

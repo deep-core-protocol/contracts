@@ -1,0 +1,10 @@
+{
+  "bin_hookless_exactIn_1e18": "200387",
+  "bin_hookless_exactIn_1e18_repeat": "200387",
+  "cl_hookless_exactIn_1e18": "212111",
+  "cl_hookless_exactIn_1e18_oneForZero": "211676",
+  "cl_hookless_exactIn_1e18_oneForZero_repeat": "211670",
+  "cl_hookless_exactIn_1e18_repeat": "212111",
+  "cl_hookless_v4recipe_firstSwap": "243290",
+  "cl_hookless_v4recipe_secondSwap": "211607"
+}

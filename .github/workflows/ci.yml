@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  solidity:
+    name: ${{ matrix.package }} · ${{ matrix.profile }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [core, periphery, router, fees, governance, hooks, hooks-revshare, hooks-rwa, launchpad, launch-periphery, registry, routing]
+        profile: [default, legacy]
+        include:
+          - profile: default
+            backend: eip1153
+            evm_version: cancun
+          - profile: legacy
+            backend: storage
+            evm_version: shanghai
+          # TickMath differential tests shell out to `npx ts-node` through ffi.
+          - package: core
+            node: true
+          # These read FORK_URL / ARB_FORK_URL in setUp and fork BSC / Arbitrum mainnet. With the variable
+          # unset they revert, they do not skip. Excluded by exact contract name, so a new fork test
+          # added later fails CI loudly instead of hiding here.
+          - package: router
+            no_match_contract: "^(StableSwapBusdUsdcTest|StableSwapArbTest|StableSwapNativeExactOutputRefundTest|StableSwapMultiHop|V2BnbCake|V2MockBnb|V3BnbCake)$"
+    env:
+      FOUNDRY_PROFILE: ${{ matrix.profile }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Exactly one core in the tree. Periphery and the router compile against packages/core and
+      # packages/periphery through their remappings; an upstream copy would be the unhardened Vault.
+      - name: one core in the tree
+        run: |
+          test ! -e packages/periphery/lib/infinity-core/src
+          test ! -e packages/router/lib/infinity-periphery/src
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.1
+
+      - uses: actions/setup-node@v4
+        if: matrix.node
+        with:
+          node-version: 20
+
+      - name: core · js deps for the ffi differential tests
+        if: matrix.node
+        working-directory: packages/core
+        run: yarn install --frozen-lockfile
+
+      # The transient backend is a remapping pinned per profile in foundry.toml. A remappings.txt
+      # entry would silently override it and build the wrong backend.
+      - name: backend wiring (${{ matrix.profile }})
+        working-directory: packages/${{ matrix.package }}
+        env:
+          BACKEND: ${{ matrix.backend }}
+          EVM_VERSION: ${{ matrix.evm_version }}
+        run: |
+          if [ -f remappings.txt ] && grep -q 'hp-transient' remappings.txt; then
+            echo "hp-transient must be pinned in foundry.toml per profile, never in remappings.txt"; exit 1
+          fi
+          forge remappings | grep 'hp-transient' | grep -q "$BACKEND" || { echo "hp-transient does not resolve to the $BACKEND backend"; forge remappings | grep hp-transient; exit 1; }
+          forge config --json | grep -q "\"evm_version\": *\"$EVM_VERSION\"" || { echo "evm_version is not $EVM_VERSION"; exit 1; }
+
+      - name: build (${{ matrix.profile }})
+        working-directory: packages/${{ matrix.package }}
+        run: forge build
+
+      - name: test (${{ matrix.profile }})
+        working-directory: packages/${{ matrix.package }}
+        env:
+          NO_MATCH_CONTRACT: ${{ matrix.no_match_contract }}
+        run: |
+          args=()
+          # Guarded: an EMPTY --no-match-contract regex matches every contract and would exclude the
+          # whole suite while reporting success.
+          if [ -n "$NO_MATCH_CONTRACT" ]; then args+=(--no-match-contract "$NO_MATCH_CONTRACT"); fi
+          forge test "${args[@]}"
+
+      - name: still one core in the tree
+        run: |
+          test ! -e packages/periphery/lib/infinity-core/src
+          test ! -e packages/router/lib/infinity-periphery/src
