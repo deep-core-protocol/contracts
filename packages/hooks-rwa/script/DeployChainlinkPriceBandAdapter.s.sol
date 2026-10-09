@@ -29,10 +29,10 @@ import {RwaReleaseBase, IUptimeFeedRead} from "./RwaReleaseBase.sol";
  * CreateX salt, because the mined address is then taken. So this script fixes the policy per chain and
  * FAILS CLOSED on a chain it has no row for:
  *
- *   any production chain  REFUSED until a row is added here, with the chain's feed policy read on
+ *   any production chain  REFUSED until it has a row in `RwaReleaseBase.sequencerPolicyFor`, read on
  *                     chain (a published Chainlink uptime feed, or zero where none applies, in which
  *                     case the adapter emits `SequencerCheckAbsent` and every pool must lean on the
- *                     feed heartbeat). DeepCore has no row yet: HyperEVM (999) is not decided.
+ *                     feed heartbeat). Recorded: Base, Ethereum, BNB Chain. Not recorded: every other.
  *   local / test chains  take what env says, through the same feed checks.
  *
  * Env: PRIVATE_KEY | DEPLOYER, the CHAINLINK_PRICE_BAND_ADAPTER salt pair, RWA_OWNER,
@@ -40,10 +40,6 @@ import {RwaReleaseBase, IUptimeFeedRead} from "./RwaReleaseBase.sol";
  */
 contract DeployChainlinkPriceBandAdapterScript is RwaReleaseBase {
     string internal constant LABEL = "CHAINLINK_PRICE_BAND_ADAPTER";
-
-    string internal constant UPTIME_DESCRIPTION = "L2 Sequencer Uptime Status Feed";
-    uint32 internal constant MIN_GRACE = 600;
-    uint32 internal constant MAX_GRACE = 24 hours;
 
     struct Params {
         Signer signer;
@@ -76,26 +72,9 @@ contract DeployChainlinkPriceBandAdapterScript is RwaReleaseBase {
         );
     }
 
-    /// @notice The per-chain sequencer policy above. Public so a test can drive it without a deploy.
+    /// @notice The per-chain sequencer policy (`RwaReleaseBase`). Public so a test can drive it without a deploy.
     function checkSequencerPolicy(address uptimeFeed, uint32 gracePeriod) public view {
-        if (DeepCoreGovernance.isProductionChain(block.chainid)) {
-            revert("no sequencer-uptime policy is recorded for this production chain; add a row to this script");
-        }
-
-        if (uptimeFeed == address(0)) {
-            require(gracePeriod == 0, "RWA_SEQUENCER_GRACE_SECONDS must be 0 when there is no uptime feed");
-            return;
-        }
-        require(gracePeriod >= MIN_GRACE && gracePeriod <= MAX_GRACE, "RWA_SEQUENCER_GRACE_SECONDS outside [600, 86400]");
-        require(uptimeFeed.code.length > 0, "RWA_SEQUENCER_UPTIME_FEED has no code");
-        require(
-            keccak256(bytes(IUptimeFeedRead(uptimeFeed).description())) == keccak256(bytes(UPTIME_DESCRIPTION)),
-            "uptime feed description is not Chainlink's"
-        );
-        require(IUptimeFeedRead(uptimeFeed).decimals() == 0, "uptime feed decimals is not 0");
-        (, int256 answer, uint256 startedAt,,) = IUptimeFeedRead(uptimeFeed).latestRoundData();
-        require(startedAt != 0, "uptime feed has no initialised round");
-        require(answer == 0, "the sequencer reads DOWN right now; do not deploy into an outage");
+        _checkSequencerPolicy(uptimeFeed, gracePeriod);
     }
 
     function runWith(Params memory p) public returns (ChainlinkPriceBandAdapter adapter) {

@@ -125,6 +125,61 @@ abstract contract RwaReleaseBase is Script {
         else vm.startBroadcast(s.deployer);
     }
 
+    /*//////////////////////////////////////////////////////////////
+        THE SEQUENCER-UPTIME POLICY, PER CHAIN - one table for every adapter
+    //////////////////////////////////////////////////////////////*/
+
+    string internal constant UPTIME_DESCRIPTION = "L2 Sequencer Uptime Status Feed";
+    uint32 internal constant MIN_SEQUENCER_GRACE = 600;
+    uint32 internal constant MAX_SEQUENCER_GRACE = 24 hours;
+
+    /// @notice What a production chain's adapters must be constructed with.
+    /// @dev `sequencerUptimeFeed` is an immutable constructor argument with no setter, so a wrong value
+    /// is a redeploy AND a new CreateX salt. Each row is a fact read on that chain, and a production
+    /// chain with no row is REFUSED rather than guessed:
+    ///
+    ///   Base 8453      Chainlink's L2 Sequencer Uptime Status Feed, read 2026-10-09:
+    ///                  `description()` = "L2 Sequencer Uptime Status Feed", `decimals()` = 0, answer 0 (up).
+    ///   Ethereum 1     an L1: there is no sequencer. Zero, and the adapter says so (`SequencerCheckAbsent`).
+    ///   BNB Chain 56   an L1: there is no sequencer. Zero.
+    ///
+    /// Not recorded, so still refused: Robinhood 4663 (an Arbitrum Nitro chain; whether a Chainlink
+    /// uptime feed exists there has not been read on chain), HyperEVM 999, and every other chain.
+    function sequencerPolicyFor(uint256 chainId) public pure returns (bool recorded, address uptimeFeed) {
+        if (chainId == 8453) return (true, 0xBCF85224fc0756B9Fa45aA7892530B47e10b6433);
+        if (chainId == 1 || chainId == 56) return (true, address(0));
+        return (false, address(0));
+    }
+
+    /// @notice The checks every feed adapter's deploy script runs on its sequencer arguments.
+    function _checkSequencerPolicy(address uptimeFeed, uint32 gracePeriod) internal view {
+        if (DeepCoreGovernance.isProductionChain(block.chainid)) {
+            (bool recorded, address want) = sequencerPolicyFor(block.chainid);
+            if (!recorded) {
+                revert("no sequencer-uptime policy is recorded for this production chain; add a row to this script");
+            }
+            require(uptimeFeed == want, "RWA_SEQUENCER_UPTIME_FEED is not the feed recorded for this chain");
+        }
+
+        if (uptimeFeed == address(0)) {
+            require(gracePeriod == 0, "RWA_SEQUENCER_GRACE_SECONDS must be 0 when there is no uptime feed");
+            return;
+        }
+        require(
+            gracePeriod >= MIN_SEQUENCER_GRACE && gracePeriod <= MAX_SEQUENCER_GRACE,
+            "RWA_SEQUENCER_GRACE_SECONDS outside [600, 86400]"
+        );
+        require(uptimeFeed.code.length > 0, "RWA_SEQUENCER_UPTIME_FEED has no code");
+        require(
+            keccak256(bytes(IUptimeFeedRead(uptimeFeed).description())) == keccak256(bytes(UPTIME_DESCRIPTION)),
+            "uptime feed description is not Chainlink's"
+        );
+        require(IUptimeFeedRead(uptimeFeed).decimals() == 0, "uptime feed decimals is not 0");
+        (, int256 answer, uint256 startedAt,,) = IUptimeFeedRead(uptimeFeed).latestRoundData();
+        require(startedAt != 0, "uptime feed has no initialised round");
+        require(answer == 0, "the sequencer reads DOWN right now; do not deploy into an outage");
+    }
+
     /// @notice The CL pool manager must be DeepCore core, registered in its Vault.
     function _requireCore(address poolManager) internal view {
         require(poolManager.code.length > 0, "RWA_CL_POOL_MANAGER has no code");
