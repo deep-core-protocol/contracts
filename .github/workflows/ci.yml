@@ -30,9 +30,11 @@ jobs:
           - package: core
             node: true
           # This one test compares a snippet with the documentation site's source, which lives in the closed
-          # application repository and is not carried here. Excluded by its exact name.
+          # application repository and is not carried here. Excluded by its exact name. forge matches
+          # --no-match-test against the SIGNATURE (`name()`), so the pattern ends in `\(\)$`; a bare `$`
+          # after the name never matches and the test still ran.
           - package: hooks
-            no_match_test: "^test_docsClaim_publishedSnippetMatchesTheDocsPage$"
+            no_match_test: '^test_docsClaim_publishedSnippetMatchesTheDocsPage\(\)$'
           # These read FORK_URL / ARB_FORK_URL in setUp and fork BSC / Arbitrum mainnet. With the variable
           # unset they revert, they do not skip. Excluded by exact contract name, so a new fork test
           # added later fails CI loudly instead of hiding here.
