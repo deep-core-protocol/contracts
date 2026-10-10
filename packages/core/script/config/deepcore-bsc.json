@@ -4,15 +4,15 @@
     "_chainId": 56,
     "_supportsEip1153": true,
     "_create3Note": "Deploy our OWN factory first (00_DeployCreate3Factory). PancakeSwap's is onlyWhitelisted and owned by an address we do not control.",
-    "create3Factory": "0x",
+    "create3Factory": "0x72257921c0de6db8c9665bb6d8462b709c61bbf8",
     "_ownerNote": "MAINNET — never an EOA. One timelock tier (Custody 48h, packages/governance/script/DeployGovernanceMainnet.s.sol, the Safe as sole proposer, address(0) as executor, a dedicated canceller); there is no Policy tier. protocolFeeControllerOwner = the DeepCore governance Safe (not created yet). poolOwner = what the Vault and both pool-manager owner wrappers are NOMINATED to (Ownable2Step): the Safe, which then queues the handover to the custody timelock. The Safe must exist on this chain (code present) first. Left as \"0x\" on purpose so a deploy fails loudly rather than succeeding with the wrong owner.",
-    "poolOwner": "0x",
-    "protocolFeeControllerOwner": "0x",
-    "vault": "0x",
-    "clPoolManager": "0x",
-    "binPoolManager": "0x",
+    "poolOwner": "0xeEd90A15348bCAf234733aeB695cA95c0c068c8B",
+    "protocolFeeControllerOwner": "0xeEd90A15348bCAf234733aeB695cA95c0c068c8B",
+    "vault": "0x405515db94adbf3a827349f2c096809639581d09",
+    "clPoolManager": "0xe23978ebbf83eab3f0226674d1183b5d3ed32fec",
+    "binPoolManager": "0x004a786c4cb79358e2f86467b0ebfd87028648f4",
     "clProtocolFeeController": "0x",
     "binProtocolFeeController": "0x",
-    "clPoolManagerOwnerContract": "0x",
-    "binPoolManagerOwnerContract": "0x"
+    "clPoolManagerOwnerContract": "0x115c885f089e9ed4dc6cb011a2474a78cacfd363",
+    "binPoolManagerOwnerContract": "0x5f3628b89ecc263a03ae49b9f45b1dd1c139d57e"
 }

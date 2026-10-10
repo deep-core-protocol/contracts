@@ -10,7 +10,7 @@ The Solidity sources of DeepCore Protocol, as submitted for audit: the settlemen
 periphery and router, DeepCore's own hooks, the launch kit, lockers, fee controllers, registry,
 governance and the routed-fill contracts, each with its tests and deploy scripts.
 
-Nothing in this repository is deployed on any chain yet.
+Deployed addresses are published in the SDK address book, written only from on-chain read-back.
 
 ## Features
 
