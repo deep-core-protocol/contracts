@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://deepcore.fun">
+    <img src=".github/assets/og-image-1200x630.png" alt="DeepCore: launch on one core. Tokens, Launchpads and DEXes at deepcore.fun" width="720">
+  </a>
+</p>
+
 # DeepCore Protocol contracts
 
 The Solidity sources of DeepCore Protocol, as submitted for audit: the settlement core, the
@@ -5,6 +11,29 @@ periphery and router, DeepCore's own hooks, the launch kit, lockers, fee control
 governance and the routed-fill contracts, each with its tests and deploy scripts.
 
 Nothing in this repository is deployed on any chain yet.
+
+## Features
+
+DeepCore is one shared liquidity core that Launchpads and DEXes build on, instead of each deploying
+its own AMM. This repository holds every contract behind it:
+
+- **One shared core.** A single Vault with concentrated-liquidity (CL) and Bin pool managers, on the
+  Infinity architecture, with HyperEVM as the first chain. Settlement compiles against EIP-1153
+  transient storage or a storage backend from the same source.
+- **Launchpads and DEXes in one transaction.** `DeepCorePadFactory` creates a Launchpad or DEX site as
+  a clone with its owner, name and brand stored on chain.
+- **Token launches.** `LaunchpadKitV2` opens a launch on a CL range or a shaped Bin distribution,
+  tradable on the real pool from the first block, with the liquidity locked by `DeepCoreLPLocker` /
+  `DeepCoreBinLPLocker`. The launch guards apply an anti-snipe fee that decays over the opening
+  window and an optional, time-limited creator tax.
+- **Utilities.** Liquidity locks, token locks and vesting, multisend, Merkle airdrops and team splits.
+- **Hooks.** Revenue-share, dynamic-fee, market-hours and stock-pair hooks, price-band oracles, and a
+  registry that records what each hook is permitted to do.
+- **Routing.** `DeepCoreFillRouter` fills a trade on DeepCore pools or another venue, for a fee that
+  sits under an immutable cap.
+- **Bounded admin.** Every protocol fee lives inside a cap fixed in the contract; increases take
+  effect only after a public notice period, decreases apply at once, and `renounceOwnership` is
+  disabled on DeepCore's own contracts. Governance is a multisig with a timelock.
 
 ## Packages
 
