@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [core, periphery, router, fees, governance, hooks, hooks-revshare, hooks-rwa, launchpad, launch-periphery, registry, routing]
+        package: [core, periphery, router, fees, governance, hooks, hooks-revshare, hooks-rwa, launchpad, launch-periphery, registry, routing, orders, vaults, lp-rewards]
         profile: [default, legacy]
         include:
           - profile: default

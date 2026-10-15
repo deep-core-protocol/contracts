@@ -58,9 +58,9 @@ library DeepCoreGovernance {
     function isProductionChain(uint256 chainId) internal pure returns (bool) {
         // anvil / hardhat / ganache defaults, and the chain ids the dev stacks pin.
         if (chainId == 31337 || chainId == 1337 || chainId == 1338) return false;
-        // Public testnets: HyperEVM testnet, Sepolia, Stable testnet, Arc testnet. (Monad testnet was
+        // Public testnets: HyperEVM testnet, Sepolia, Base Sepolia, Stable testnet, Arc testnet. (Monad testnet was
         // dropped 2026-09-24 - owner decision; Monad MAINNET 143 is a production chain and is NOT here.)
-        if (chainId == 998 || chainId == 11155111 || chainId == 2201 || chainId == 5042002) return false;
+        if (chainId == 998 || chainId == 11155111 || chainId == 84532 || chainId == 2201 || chainId == 5042002) return false;
         return true;
     }
 

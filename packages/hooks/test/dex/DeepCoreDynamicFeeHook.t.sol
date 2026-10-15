@@ -79,7 +79,7 @@ contract DeepCoreDynamicFeeHookTest is Test, Deployers {
     function setUp() public {
         vm.warp(T0);
         (vault, manager) = createFreshManager();
-        hook = new DeepCoreDynamicFeeHook(manager, IVault(address(vault)), SAFE, RECIPIENT, FEE_CAP, SHARE, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
+        hook = _newHook();
         router = new CLPoolManagerRouter(vault, manager);
         (c0, c1) = deployCurrencies(2 ** 250);
         IERC20(Currency.unwrap(c0)).approve(address(router), type(uint256).max);
@@ -90,6 +90,12 @@ contract DeepCoreDynamicFeeHookTest is Test, Deployers {
     /*//////////////////////////////////////////////////////////////
                                 HELPERS
     //////////////////////////////////////////////////////////////*/
+
+    /// @dev The hook under test. `DeepCoreDexHookTest` overrides it to run this whole suite against
+    /// the dynamic-fee hook compiled with the oracle.
+    function _newHook() internal virtual returns (DeepCoreDynamicFeeHook) {
+        return new DeepCoreDynamicFeeHook(manager, IVault(address(vault)), SAFE, RECIPIENT, FEE_CAP, SHARE, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
+    }
 
     function _cfg() internal pure returns (DeepCoreDynamicFeeHook.FeeConfig memory c) {
         c.baseFee = 3_000;
@@ -166,29 +172,40 @@ contract DeepCoreDynamicFeeHookTest is Test, Deployers {
                                DEPLOYMENT
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev An EXTERNAL constructor call, so `vm.expectRevert` applies to this call. With
+    /// `allow_internal_expect_revert`, an expected revert on a bare `new` inside the test makes the TEST
+    /// itself revert-and-pass, and every line after the first refusal silently never runs (found by a
+    /// surviving mutant, 2026-10-14).
+    function newDynFee(IVault v, address o, address r, uint24 cap, uint16 share, uint16 maxShare, uint32 sn, uint32 tn, uint24 mm)
+        external
+        returns (address)
+    {
+        return address(new DeepCoreDynamicFeeHook(manager, v, o, r, cap, share, maxShare, sn, tn, mm));
+    }
+
     function test_bitmap_is_0x08C3() public view {
         assertEq(hook.getHooksRegistrationBitmap(), 0x08C3);
     }
 
     function test_deploy_refusesAVaultThatIsNotTheManagers() public {
         vm.expectRevert(abi.encodeWithSelector(DeepCoreDynamicFeeHook.InvalidDeployment.selector, 1));
-        new DeepCoreDynamicFeeHook(manager, IVault(address(0x1234)), SAFE, RECIPIENT, FEE_CAP, SHARE, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
+        this.newDynFee(IVault(address(0x1234)), SAFE, RECIPIENT, FEE_CAP, SHARE, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
     }
 
     function test_deploy_refusesBadImmutables() public {
         IVault v = IVault(address(vault));
         vm.expectRevert(abi.encodeWithSelector(DeepCoreDynamicFeeHook.InvalidDeployment.selector, 2));
-        new DeepCoreDynamicFeeHook(manager, v, SAFE, RECIPIENT, 100_001, SHARE, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
+        this.newDynFee(v, SAFE, RECIPIENT, 100_001, SHARE, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
         vm.expectRevert(abi.encodeWithSelector(DeepCoreDynamicFeeHook.InvalidDeployment.selector, 3));
-        new DeepCoreDynamicFeeHook(manager, v, SAFE, RECIPIENT, FEE_CAP, SHARE, 5_001, NOTICE, NOTICE, MAX_MOVE);
+        this.newDynFee(v, SAFE, RECIPIENT, FEE_CAP, SHARE, 5_001, NOTICE, NOTICE, MAX_MOVE);
         vm.expectRevert(abi.encodeWithSelector(DeepCoreDynamicFeeHook.InvalidDeployment.selector, 3));
-        new DeepCoreDynamicFeeHook(manager, v, SAFE, RECIPIENT, FEE_CAP, MAX_SHARE + 1, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
+        this.newDynFee(v, SAFE, RECIPIENT, FEE_CAP, MAX_SHARE + 1, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
         vm.expectRevert(abi.encodeWithSelector(DeepCoreDynamicFeeHook.InvalidDeployment.selector, 4));
-        new DeepCoreDynamicFeeHook(manager, v, SAFE, RECIPIENT, FEE_CAP, SHARE, MAX_SHARE, 1 hours, NOTICE, MAX_MOVE);
+        this.newDynFee(v, SAFE, RECIPIENT, FEE_CAP, SHARE, MAX_SHARE, 1 hours, NOTICE, MAX_MOVE);
         vm.expectRevert(abi.encodeWithSelector(DeepCoreDynamicFeeHook.InvalidDeployment.selector, 5));
-        new DeepCoreDynamicFeeHook(manager, v, SAFE, RECIPIENT, FEE_CAP, SHARE, MAX_SHARE, NOTICE, NOTICE, 2_001);
+        this.newDynFee(v, SAFE, RECIPIENT, FEE_CAP, SHARE, MAX_SHARE, NOTICE, NOTICE, 2_001);
         vm.expectRevert(DeepCoreDynamicFeeHook.ZeroAddress.selector);
-        new DeepCoreDynamicFeeHook(manager, v, SAFE, address(0), FEE_CAP, SHARE, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
+        this.newDynFee(v, SAFE, address(0), FEE_CAP, SHARE, MAX_SHARE, NOTICE, NOTICE, MAX_MOVE);
     }
 
     /*//////////////////////////////////////////////////////////////

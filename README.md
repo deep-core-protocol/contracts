@@ -8,7 +8,8 @@
 
 The Solidity sources of DeepCore Protocol, as submitted for audit: the settlement core, the
 periphery and router, DeepCore's own hooks, the launch kit, lockers, fee controllers, registry,
-governance and the routed-fill contracts, each with its tests and deploy scripts.
+governance, the routed-fill contracts, limit orders and DCA, managed vaults and liquidity rewards,
+each with its tests and deploy scripts.
 
 **Live on HyperEVM · BNB Chain · Robinhood Chain · Base, at the same addresses on every chain.** The
 full address set ships in the SDK address book
@@ -60,7 +61,12 @@ its own AMM. This repository holds every contract behind it:
 - **Locks and distribution.** Liquidity locks, token locks and vesting, Merkle airdrops, team splits
   and multisend.
 - **Hooks.** Dynamic-fee hooks for CL and Bin pools, a revenue-share hook, market-hours and
-  stock-pair hooks with price-band oracles, and a registry that records what each hook may do.
+  stock-pair hooks with price-band oracles, an on-chain price oracle module, and a registry that
+  records what each hook may do.
+- **Orders, vaults and rewards.** `DeepCoreRangeOrders` (CL limit orders) and `DeepCoreDCA` are Vault
+  lockers that need no hook, so they work on any pool; `DeepCoreManagedVault` clones hold two positions
+  around the oracle's TWAP and never swap; `DeepCoreLiquidityRewardsHook` streams project-funded
+  rewards to in-range liquidity. Every fee is frozen per order, plan or vault inside an immutable cap.
 - **Bounded admin.** The contracts are owned by a 2-of-3 Safe multisig. Fees and caps are immutable
   or move only behind notice delays written in the contracts (an increase waits, a decrease applies at
   once), and `renounceOwnership` is disabled on DeepCore's own contracts. Every upkeep call is
@@ -82,6 +88,9 @@ its own AMM. This repository holds every contract behind it:
 | `packages/fees` | Protocol fee controllers | GPL-2.0-or-later |
 | `packages/governance` | Timelock and votes token | GPL-2.0-or-later |
 | `packages/routing` | Routed-fill router and executor | GPL-2.0-or-later |
+| `packages/orders` | `DeepCoreRangeOrders` (CL limit orders) and `DeepCoreDCA` (scheduled swaps): Vault lockers, not hooks | GPL-2.0-or-later |
+| `packages/vaults` | `DeepCoreVaultFactory` and `DeepCoreManagedVault` clones: managed liquidity around the oracle TWAP | GPL-2.0-or-later |
+| `packages/lp-rewards` | `DeepCoreLiquidityRewardsHook`: project-funded rewards streamed to in-range CL liquidity | GPL-2.0-or-later |
 
 Upstream copyright notices and licence headers are kept as shipped. The upstream audit reports the
 forks came with are under `packages/periphery/audits` and `packages/router/audits`; they cover the
@@ -108,6 +117,9 @@ Two things to know before building:
   `packages/core` and `packages/periphery` through their remappings; an upstream copy would silently
   substitute the unhardened Vault.
 - **`packages/launchpad` is a via-IR build** and needs roughly 6 GB of memory per compiler process.
+  `packages/orders`, `packages/vaults` and `packages/lp-rewards` are via-IR too (the last two pin low
+  optimizer runs to fit EIP-170; `lp-rewards` compiles the real `CLPositionManager` at 9,000 runs for
+  its tests). Build one package at a time on a small machine.
 
 ## What differs from upstream, in one paragraph
 

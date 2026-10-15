@@ -6,7 +6,7 @@ optimizer_runs = 25_666
 via_ir = true
 evm_version = "cancun"
 bytecode_hash = "none"
-allow_paths = ["../core", "../fees"]
+allow_paths = ["../core", "../fees", "../hooks", "../hooks-rwa"]
 allow_internal_expect_revert = true
 remappings = [
     "infinity-core/=../core/",
@@ -14,6 +14,10 @@ remappings = [
     "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
     "@openzeppelin/=../core/lib/openzeppelin-contracts/",
     "deepcore-fees/=../fees/",
+    # DeepCoreTunerGate's tests drive the real dynamic-fee hook and ManualPriceBandOracle.
+    "deepcore-hooks/=../hooks/",
+    "deepcore-hooks-rwa/=../hooks-rwa/",
+    "solmate/=../core/lib/solmate/",
     "hp-transient/=../core/src/libraries/transient/eip1153/",
 ]
 
@@ -32,7 +36,7 @@ optimizer_runs = 25_666
 via_ir = true
 evm_version = "shanghai"
 bytecode_hash = "none"
-allow_paths = ["../core", "../fees"]
+allow_paths = ["../core", "../fees", "../hooks", "../hooks-rwa"]
 allow_internal_expect_revert = true
 remappings = [
     "infinity-core/=../core/",
@@ -40,5 +44,9 @@ remappings = [
     "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
     "@openzeppelin/=../core/lib/openzeppelin-contracts/",
     "deepcore-fees/=../fees/",
+    # DeepCoreTunerGate's tests drive the real dynamic-fee hook and ManualPriceBandOracle.
+    "deepcore-hooks/=../hooks/",
+    "deepcore-hooks-rwa/=../hooks-rwa/",
+    "solmate/=../core/lib/solmate/",
     "hp-transient/=../core/src/libraries/transient/storage/",
 ]

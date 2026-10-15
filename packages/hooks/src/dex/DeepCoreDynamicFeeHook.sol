@@ -328,7 +328,12 @@ contract DeepCoreDynamicFeeHook is BaseCLHook, Ownable2Step, ReentrancyGuard, IL
 
     /// @dev Starts the references at the birth tick and writes the base fee as the pool's stored fee,
     /// so `getSlot0` never reports zero.
-    function _afterInitialize(address, PoolKey calldata key, uint160, int24 tick) internal override returns (bytes4) {
+    function _afterInitialize(address, PoolKey calldata key, uint160, int24 tick)
+        internal
+        virtual
+        override
+        returns (bytes4)
+    {
         PoolId id = key.toId();
         uint40 t = uint40(block.timestamp);
         _states[id] = PoolState({secTick: tick, secTime: t, volRefTick: tick, volStored: 0, volTime: t});
@@ -339,6 +344,7 @@ contract DeepCoreDynamicFeeHook is BaseCLHook, Ownable2Step, ReentrancyGuard, IL
     /// @dev Never reverts for a configured pool: one static read, bounded arithmetic, one slot write.
     function _beforeSwap(address, PoolKey calldata key, ICLPoolManager.SwapParams calldata params, bytes calldata)
         internal
+        virtual
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {

@@ -1,0 +1,95 @@
+# DeepCoreProtocol liquidity rewards: `DeepCoreLiquidityRewardsHook` (a CL DeepCore that streams
+# project-funded rewards to in-range liquidity). Design of record: docs/products/liquidity-rewards.md.
+#
+# `hp-transient/` is pinned PER PROFILE here and deliberately NOT in a remappings.txt - this package
+# ships no remappings.txt at all, so nothing can silently override the profile and build the wrong
+# backend. The hook itself uses no transient storage; the core test deployment (Vault + manager) and
+# the real CLPositionManager do, so the legacy profile runs every test on the SSTORE settlement layer.
+#
+# optimizer_runs = 800: DeepCoreLiquidityRewardsHook is 25,608 bytes at 2,000 runs (over EIP-170), 23,433 at
+# 800 and 22,998 at 200 (measured from deployedBytecode.object, 2026-10-13). 800 keeps ~1,100 bytes of
+# headroom; do not raise it without re-reading the size under BOTH profiles.
+#
+# The tests deploy the REAL CLPositionManager, which only fits EIP-170 at 9,000 runs (as in
+# packages/launchpad), so it is restricted to that profile. Nothing in src/ imports it.
+
+[profile.default]
+src = "src"
+out = "foundry-out"
+solc_version = "0.8.26"
+optimizer_runs = 800
+via_ir = true
+evm_version = "cancun"
+bytecode_hash = "none"
+auto_detect_remappings = false
+allow_paths = ["../core", "../hooks", "../periphery"]
+allow_internal_expect_revert = true
+gas_limit = "3000000000"
+skip = [
+    # Default (cancun) build: exclude only the storage backend it does not use.
+    "**/transient/storage/**",
+]
+remappings = [
+    "infinity-core/=../core/",
+    "infinity-periphery/=../periphery/",
+    "deepcore-hooks/=../hooks/",
+    "permit2/=../periphery/lib/permit2",
+    "forge-std/=../core/lib/forge-std/src/",
+    "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
+    "openzeppelin-contracts/=../core/lib/openzeppelin-contracts/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "solmate/=../core/lib/solmate/",
+    "hp-transient/=../core/src/libraries/transient/eip1153/",
+]
+additional_compiler_profiles = [{ name = "clPosm", optimizer_runs = 9000 }]
+compilation_restrictions = [{ paths = "../periphery/src/pool-cl/CLPositionManager.sol", optimizer_runs = 9000 }]
+
+# Pre-Cancun build. Mirrors packages/core --profile legacy.
+[profile.legacy]
+src = "src"
+out = "foundry-out-legacy"
+solc_version = "0.8.26"
+optimizer_runs = 800
+via_ir = true
+evm_version = "shanghai"
+bytecode_hash = "none"
+auto_detect_remappings = false
+allow_paths = ["../core", "../hooks", "../periphery"]
+allow_internal_expect_revert = true
+gas_limit = "3000000000"
+skip = [
+    "**/transient/eip1153/**",
+    "**/openzeppelin-contracts/contracts/mocks/**",
+    "**/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+    "**/openzeppelin-contracts/contracts/utils/ShortStrings.sol",
+    "**/openzeppelin-contracts/contracts/utils/Arrays.sol",
+    "**/openzeppelin-contracts/contracts/utils/SlotDerivation.sol",
+    "**/openzeppelin-contracts/contracts/utils/ReentrancyGuardTransient.sol",
+    "**/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Utils.sol",
+    "**/openzeppelin-contracts/contracts/token/ERC20/extensions/draft-ERC20TemporaryApproval.sol",
+]
+remappings = [
+    "infinity-core/=../core/",
+    "infinity-periphery/=../periphery/",
+    "deepcore-hooks/=../hooks/",
+    "permit2/=../periphery/lib/permit2",
+    "forge-std/=../core/lib/forge-std/src/",
+    "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
+    "openzeppelin-contracts/=../core/lib/openzeppelin-contracts/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "solmate/=../core/lib/solmate/",
+    "hp-transient/=../core/src/libraries/transient/storage/",
+]
+additional_compiler_profiles = [{ name = "clPosm", optimizer_runs = 9000 }]
+compilation_restrictions = [{ paths = "../periphery/src/pool-cl/CLPositionManager.sol", optimizer_runs = 9000 }]
+
+[fuzz]
+runs = 256
+
+[invariant]
+runs = 64
+depth = 40
+fail_on_revert = false
+
+[lint]
+lint_on_build = false

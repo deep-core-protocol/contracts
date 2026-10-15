@@ -12,8 +12,15 @@ fs_permissions = [
     # test/docs/DocsClaims.t.sol reads the published docs snippet to prove the
     # committed fixture has not drifted from the page.
     { access = "read", path = "./test" },
+    { access = "read", path = "./src" },
     { access = "read", path = "../../apps/web/src/routes/docs" },
 ]
+# DeepCoreDexHook (the accepted dynamic-fee hook + OracleModule) is 26,582 bytes at 25,666 runs,
+# over EIP-170. It is pinned to 2,000 runs (22,631 bytes). Every compilation unit that includes it
+# (its tests, its deploy script) gets the "dexrt" profile; nothing else changes (the accepted
+# DeepCoreDynamicFeeHook's own artifact is byte-identical, checked after this was added).
+additional_compiler_profiles = [{ name = "dexrt", optimizer_runs = 2_000 }]
+compilation_restrictions = [{ paths = "src/dex/DeepCoreDexHook.sol", optimizer_runs = 2_000 }]
 remappings = [
     "infinity-core/=../core/",
     "deepcore-hooks/=./",
@@ -38,8 +45,15 @@ fs_permissions = [
     # test/docs/DocsClaims.t.sol reads the published docs snippet to prove the
     # committed fixture has not drifted from the page.
     { access = "read", path = "./test" },
+    { access = "read", path = "./src" },
     { access = "read", path = "../../apps/web/src/routes/docs" },
 ]
+# DeepCoreDexHook (the accepted dynamic-fee hook + OracleModule) is 26,582 bytes at 25,666 runs,
+# over EIP-170. It is pinned to 2,000 runs (22,631 bytes). Every compilation unit that includes it
+# (its tests, its deploy script) gets the "dexrt" profile; nothing else changes (the accepted
+# DeepCoreDynamicFeeHook's own artifact is byte-identical, checked after this was added).
+additional_compiler_profiles = [{ name = "dexrt", optimizer_runs = 2_000 }]
+compilation_restrictions = [{ paths = "src/dex/DeepCoreDexHook.sol", optimizer_runs = 2_000 }]
 remappings = [
     "infinity-core/=../core/",
     "deepcore-hooks/=./",

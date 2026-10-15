@@ -40,7 +40,7 @@ contract DeployGovernanceScript is Script {
     /// skip list in `packages/hooks/script/DeepCoreGovernance.sol` (not imported: this package has no
     /// `deepcore-hooks/` remapping).
     function isTestChain(uint256 chainId) public pure returns (bool) {
-        return chainId == 31337 || chainId == 1337 || chainId == 1338 || chainId == 998 || chainId == 11155111
+        return chainId == 31337 || chainId == 1337 || chainId == 1338 || chainId == 998 || chainId == 11155111 || chainId == 84532
             || chainId == 2201 || chainId == 5042002;
     }
 

@@ -1,0 +1,85 @@
+# DeepCoreProtocol managed-liquidity vaults: `DeepCoreVaultFactory` and `DeepCoreManagedVault` clones.
+# Design of record: docs/products/managed-vaults.md.
+#
+# A vault is a Vault LOCKER (like packages/orders): it takes a lock, modifies its own positions in the
+# CL pool manager and settles. It is never an app and never a hook.
+#
+# `hp-transient/` is pinned PER PROFILE here and deliberately NOT in a remappings.txt - this package
+# ships no remappings.txt, so nothing can silently override the profile and build the wrong backend.
+# The core test deployment (Vault + manager) DOES use the backend, so the legacy profile runs every
+# test against the SSTORE settlement layer.
+
+[profile.default]
+src = "src"
+out = "foundry-out"
+solc_version = "0.8.26"
+optimizer_runs = 1
+via_ir = true
+evm_version = "cancun"
+bytecode_hash = "none"
+allow_paths = ["../core", "../periphery", "../launchpad", "../hooks"]
+allow_internal_expect_revert = true
+gas_limit = "3000000000"
+skip = [
+    # Default (cancun) build: exclude only the storage backend it does not use.
+    "**/transient/storage/**",
+]
+remappings = [
+    "infinity-core/=../core/",
+    "infinity-periphery/=../periphery/",
+    "deepcore-launchpad/=../launchpad/",
+    "deepcore-hooks/=../hooks/",
+    "forge-std/=../core/lib/forge-std/src/",
+    "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
+    "openzeppelin-contracts/=../core/lib/openzeppelin-contracts/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "solmate/=../core/lib/solmate/",
+    "hp-transient/=../core/src/libraries/transient/eip1153/",
+]
+
+# Pre-Cancun build. Mirrors packages/core --profile legacy.
+[profile.legacy]
+src = "src"
+out = "foundry-out-legacy"
+solc_version = "0.8.26"
+optimizer_runs = 1
+via_ir = true
+evm_version = "shanghai"
+bytecode_hash = "none"
+allow_paths = ["../core", "../periphery", "../launchpad", "../hooks"]
+allow_internal_expect_revert = true
+gas_limit = "3000000000"
+skip = [
+    "**/transient/eip1153/**",
+    "**/openzeppelin-contracts/contracts/mocks/**",
+    "**/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+    "**/openzeppelin-contracts/contracts/utils/ShortStrings.sol",
+    "**/openzeppelin-contracts/contracts/utils/Arrays.sol",
+    "**/openzeppelin-contracts/contracts/utils/SlotDerivation.sol",
+    "**/openzeppelin-contracts/contracts/utils/ReentrancyGuardTransient.sol",
+    "**/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Utils.sol",
+    "**/openzeppelin-contracts/contracts/token/ERC20/extensions/draft-ERC20TemporaryApproval.sol",
+]
+remappings = [
+    "infinity-core/=../core/",
+    "infinity-periphery/=../periphery/",
+    "deepcore-launchpad/=../launchpad/",
+    "deepcore-hooks/=../hooks/",
+    "forge-std/=../core/lib/forge-std/src/",
+    "ds-test/=../core/lib/forge-std/lib/ds-test/src/",
+    "openzeppelin-contracts/=../core/lib/openzeppelin-contracts/",
+    "@openzeppelin/=../core/lib/openzeppelin-contracts/",
+    "solmate/=../core/lib/solmate/",
+    "hp-transient/=../core/src/libraries/transient/storage/",
+]
+
+[fuzz]
+runs = 256
+
+[invariant]
+runs = 64
+depth = 40
+fail_on_revert = false
+
+[lint]
+lint_on_build = false
