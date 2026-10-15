@@ -6,6 +6,7 @@ import "forge-std/Script.sol";
 
 import {DeepCoreDeploy} from "deepcore-hooks/script/DeepCoreCreateX.sol";
 import {DeepCoreGovernance} from "deepcore-hooks/script/DeepCoreGovernance.sol";
+import {DeepCoreSignerScript} from "deepcore-hooks/script/DeepCoreSigner.sol";
 import {ICLPoolManager} from "infinity-core/src/pool-cl/interfaces/ICLPoolManager.sol";
 
 import {DeepCoreManagedVault} from "../src/DeepCoreManagedVault.sol";
@@ -23,19 +24,24 @@ import {DeepCoreVaultFactory} from "../src/DeepCoreVaultFactory.sol";
  * The fee recipient (the Safe), the creation-fee cap, the performance-fee cap, the notice and the
  * implementation. Only the two VALUES move, by the Safe, inside the caps.
  *
- * THE DECISION (owner, 2026-10-12): performance fee 10% (1,000 bps) of harvested LP fees, immutable cap 20%
- * (2,000 bps); a flat creation fee of 0.075 ETH-equivalent in native (as the utilities), cap 10x; 7-day
- * notice. Asserted on every production chain. The fee is wei; any dollar figure is converted OFF CHAIN.
+ * THE DECISION (owner, 2026-10-14, "30% under the market"; it was 10% on 2026-10-12): performance fee 7%
+ * (700 bps) of harvested LP fees, immutable cap 20% (2,000 bps); a flat creation fee of $5-equivalent in
+ * native (priced on the day, `VAULTS_FEE_WEI`), cap 10x; 7-day notice. Asserted on every production chain
+ * (the runner's `VAULTS_PERF_BPS_DECIDED` and this constant must agree: the mainnet fork rehearsal of
+ * 2026-10-15 stopped here while this still said 1,000). The fee is wei; any dollar figure is converted OFF CHAIN.
+ *
+ * Signer: `PRIVATE_KEY`, or a named `DEPLOYER` with `--unlocked` / `--account` / `--ledger` (DeepCoreSigner),
+ * like every other release script, so a fork rehearsal can impersonate the real deployer.
  *
  * Usage (dry run first - no --broadcast):
  *   eval "$(node ops/deploy/tools/salts-env.mjs ops/deploy/salts/salts.0x<deployer>.json)"
  *   VAULTS_OWNER_SAFE=<Safe> CL_POOL_MANAGER=<manager> VAULTS_FEE_WEI=<wei> VAULTS_FEE_CAP_WEI=<10x> \
- *   VAULTS_PERF_BPS=1000 VAULTS_PERF_CAP_BPS=2000 VAULTS_NOTICE_SECONDS=604800 \
+ *   VAULTS_PERF_BPS=700 VAULTS_PERF_CAP_BPS=2000 VAULTS_NOTICE_SECONDS=604800 \
  *   forge script script/DeployDeepCoreVaults.s.sol --rpc-url $RPC
  */
-contract DeployDeepCoreVaultsScript is Script {
+contract DeployDeepCoreVaultsScript is DeepCoreSignerScript {
     uint32 internal constant MAINNET_NOTICE_SECONDS = 7 days;
-    uint16 internal constant DECIDED_PERF_BPS = 1_000;
+    uint16 internal constant DECIDED_PERF_BPS = 700;
     uint16 internal constant DECIDED_PERF_CAP_BPS = 2_000;
 
     string internal constant IMPL_LABEL = "DEEPCORE_MANAGED_VAULT_IMPL";
@@ -55,8 +61,8 @@ contract DeployDeepCoreVaultsScript is Script {
     }
 
     function run() public returns (DeepCoreVaultFactory factory) {
-        uint256 pk = vm.envUint("PRIVATE_KEY");
-        address deployer = vm.addr(pk);
+        uint256 pk = _pkFromEnv();
+        address deployer = _signerOf(pk);
         return runWith(
             Wiring({
                 pk: pk,
@@ -100,7 +106,7 @@ contract DeployDeepCoreVaultsScript is Script {
         preflight(w);
         bytes memory implCode = implInitCode(w);
         bytes memory factoryCode = factoryInitCode(w);
-        vm.startBroadcast(w.pk);
+        _startBroadcastAs(w.pk);
         DeepCoreDeploy.deploy(w.implTarget, implCode, IMPL_LABEL);
         factory = DeepCoreVaultFactory(payable(DeepCoreDeploy.deploy(w.factoryTarget, factoryCode, FACTORY_LABEL)));
         vm.stopBroadcast();
@@ -118,14 +124,14 @@ contract DeployDeepCoreVaultsScript is Script {
 
     /// @notice Every check that must pass before anything is broadcast. Public so tests drive it.
     function preflight(Wiring memory w) public view {
-        address deployer = vm.addr(w.pk);
+        address deployer = _signerOf(w.pk);
         require(w.implTarget.deployer == deployer && w.factoryTarget.deployer == deployer, "salt target is not this deployer");
         DeepCoreDeploy.preflight(w.implTarget, IMPL_LABEL);
         DeepCoreDeploy.preflight(w.factoryTarget, FACTORY_LABEL);
 
         if (DeepCoreGovernance.isProductionChain(block.chainid)) {
             require(w.noticeSeconds == MAINNET_NOTICE_SECONDS, "VAULTS_NOTICE_SECONDS is not 7 days on mainnet");
-            require(w.perfBps == DECIDED_PERF_BPS, "VAULTS_PERF_BPS is not the decided 1000 bps");
+            require(w.perfBps == DECIDED_PERF_BPS, "VAULTS_PERF_BPS is not the decided 700 bps");
             require(w.perfCapBps == DECIDED_PERF_CAP_BPS, "VAULTS_PERF_CAP_BPS is not the decided 2000 bps");
             require(w.feeWei > 0 && w.feeCapWei == w.feeWei * 10, "VAULTS_FEE_CAP_WEI must be 10x a non-zero VAULTS_FEE_WEI");
         }
